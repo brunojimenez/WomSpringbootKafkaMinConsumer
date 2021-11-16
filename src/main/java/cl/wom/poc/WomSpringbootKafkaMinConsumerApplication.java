@@ -6,6 +6,8 @@ import java.util.Map;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -19,6 +21,11 @@ import org.springframework.kafka.support.Acknowledgment;
 
 @SpringBootApplication
 public class WomSpringbootKafkaMinConsumerApplication {
+
+	/**
+	 * Log de la clase.
+	 */
+	private static Logger log = LogManager.getLogger(WomSpringbootKafkaMinConsumerApplication.class);
 
 	public static final String TOPIC = "poc-test01";
 
@@ -54,7 +61,7 @@ public class WomSpringbootKafkaMinConsumerApplication {
 
 		// (int - default 60000 (1 minute))
 		// https://kafka.apache.org/documentation/#consumerconfigs_default.api.timeout.ms
-		consumerProps.put("default.api.timeout.ms", 500);
+		consumerProps.put("default.api.timeout.ms", 60000);
 
 		// (int - default 40000 (40 seconds))
 		// https://kafka.apache.org/documentation/#connectconfigs_request.timeout.ms
@@ -69,34 +76,23 @@ public class WomSpringbootKafkaMinConsumerApplication {
 		ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
 		factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
 		factory.setConsumerFactory(consumerFactory());
-		factory.setConcurrency(10);
+		factory.setConcurrency(5);
 		return factory;
 	}
 
 	@KafkaListener(id = "myId", topics = TOPIC, containerFactory = "kafkaListenerContainerFactory")
 	public void listen(ConsumerRecord<String, String> message, Acknowledgment ack) {
 
-		System.out.println("value = " + message.value() + ", Partition = " + message.partition() + ", Offset = "
-				+ message.offset());
+		log.info("[runner] value = {}, Partition = {}, Offset = {}", message.value(), message.partition(),
+				message.offset());
 
 		try {
-			Thread.sleep(120000);
+			Thread.sleep(2000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 
 		ack.acknowledge();
 	}
-
-//	public void listen(String in, Acknowledgment ack) {
-//		System.out.println("value = " + in);
-//		try {
-//			Thread.sleep(30000);
-//		} catch (InterruptedException e) {
-//			e.printStackTrace();
-//		}
-//		System.out.println("value = " + in + " - ACK");
-//		ack.acknowledge();
-//	}
 
 }
